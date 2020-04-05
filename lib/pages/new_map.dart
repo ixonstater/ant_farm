@@ -15,7 +15,7 @@ class _NewMapState extends State<NewMap>{
   var key;
   _NewMapState(this.key);
   int displayedContent = _NewMapState.jsonEditor;
-  String currentMap;
+  String currentMap = "{}";
 
   selectBody(){
     if(this.displayedContent == _NewMapState.jsonEditor){
@@ -73,37 +73,136 @@ class _NewMapState extends State<NewMap>{
           ],
         ),
       ),
-      body: this.selectBody()
+      body: this.selectBody(),
+      resizeToAvoidBottomPadding: true,
     );
   }
 }
 
 class JSONEditor extends StatelessWidget{
-  JSONEditor(Key key, String map) : super(key: key);
+  final String map;
+  JSONEditor(Key key, this.map) : super(key: key);
 
   Widget build(BuildContext build){
-    return ListView(
-      children: <Widget>[
-        SizedBox(height: 10),
-        Text("Enter JSON Here"),
-        SizedBox(height: 5),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.black,
-              width: 2
+    var mediaData = MediaQuery.of(build);
+    var height = mediaData.size.height;
+    var width = mediaData.size.width;
+    
+    if(height > width){
+      return ListView(
+        children: <Widget>[
+          SizedBox(height: 10),
+          Text("Enter JSON Here"),
+          SizedBox(height: 5),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.black,
+                width: 2
+              )
+            ),
+            margin: EdgeInsets.only(
+              left: 10,
+              right: 10
+            ),
+            child: TextField(
+              maxLines: 15,
+              controller: TextEditingController.fromValue(
+                TextEditingValue(
+                  text: this.map
+                )
+              )
+            ),
+          ),
+          SizedBox(height: 10),
+          Align(
+            alignment: Alignment.center,
+            child: RaisedButton(
+              onPressed: (){},
+              child: Text(
+                "Validate",
+                style: AppThemes.buttonText()
+              )
+            ),
+          ),
+          SizedBox(height: 10),
+          Align(
+            alignment: Alignment.center,
+            child: RaisedButton(
+              onPressed: (){},
+              child: Text(
+                "Render",
+                style: AppThemes.buttonText()
+              )
+            ),
+          ),
+        ],
+      );
+    }
+    else {
+      return Row(
+        children: <Widget>[
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colors.black,
+                  width: 2
+                )
+              ),
+              child: ListView(
+                children: <Widget> [
+                  SizedBox(height: 10),
+                  Text(
+                    "Enter JSON Here"
+                  ),
+                  SizedBox(height: 10),
+                  TextField(
+                    maxLines: 999999,
+                    scrollPadding: EdgeInsets.all(20.0),
+                    controller: TextEditingController.fromValue(
+                      TextEditingValue(
+                        text: this.map
+                      )
+                    )
+                  ),
+                ]
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+             crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(width: 10),
+                Align(
+                  alignment: Alignment.center,
+                  child: RaisedButton(
+                    onPressed: (){},
+                    child: Text(
+                      "Validate",
+                      style: AppThemes.buttonText()
+                    )
+                  ),
+                ),
+                SizedBox(width: 10),
+                Align(
+                  alignment: Alignment.center,
+                  child: RaisedButton(
+                    onPressed: (){},
+                    child: Text(
+                      "Render",
+                      style: AppThemes.buttonText()
+                    )
+                  ),
+                )
+              ]
             )
-          ),
-          margin: EdgeInsets.only(
-            left: 10,
-            right: 10
-          ),
-          child: TextField(
-            maxLines: 15
           )
-        )
-      ],
-    );
+        ]
+      );
+    }
   }
 }
 
