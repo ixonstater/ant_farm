@@ -25,7 +25,7 @@ class _NewMapState extends State<NewMap>{
       return GUIMapMaker(key, currentMap);
     }
     else if (this.displayedContent == _NewMapState.mapUpload){
-      return MapUpload(key, currentMap);
+      return SelectMap(key, currentMap);
     }
   }
 
@@ -66,7 +66,7 @@ class _NewMapState extends State<NewMap>{
                 Navigator.pop(build);
               }),
               title: Text(
-                "Map File Upload",
+                "Change Selected Map",
                 style: AppThemes.listTileText()
               ),
             )
@@ -220,8 +220,8 @@ class GUIMapMaker extends StatelessWidget{
   }
 }
 
-class MapUpload extends StatelessWidget{
-  MapUpload(Key key, String map) : super(key: key);
+class SelectMap extends StatelessWidget{
+  SelectMap(Key key, String map) : super(key: key);
 
   Widget build(BuildContext build){
     return Align(

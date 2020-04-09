@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'homepage.dart';
 import 'pages/new_map.dart' show NewMap;
 import 'pages/simulation_config.dart' show SimulationConfig;
@@ -14,13 +13,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      home: Farm(),
       // home: HomePage(),
-      home: NewMap(),
       routes: {
-        'newMap': (context) => new NewMap(),
+        'buildMap': (context) => new NewMap(),
         'configSim': (context) => new SimulationConfig(key),
         'tutorial': (context) => new Tutorial(key),
-        'farm': (context) => new Farm(key)
+        'farm': (context) => new Farm()
       },
       theme: ThemeData(
         primaryColor: Colors.black,

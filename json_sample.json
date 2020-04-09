@@ -1,0 +1,49 @@
+{
+    "dimensions": [5,5],
+    "isValid": false,
+    "gridSpecs": [
+        [
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true]
+        ],
+        [
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true]
+        ],
+        [
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true]
+        ],
+        [
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true]
+        ],
+        [
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true],
+            [true, false, false, true]
+        ]
+    ]
+}
+
+{
+    "foodSpawnRate": 10,
+    "antSpawnRate": 20,
+    "antSpawnCeiling": 100,
+    "foodToAntRatio": 0.23,
+    "starvationPeriod": 40
+}

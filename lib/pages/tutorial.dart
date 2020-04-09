@@ -1,3 +1,4 @@
+import 'package:ant_farm/themes/themes.dart';
 import 'package:flutter/material.dart';
 
 class Tutorial extends StatelessWidget{
@@ -6,7 +7,10 @@ class Tutorial extends StatelessWidget{
   Widget build(BuildContext build){
     return Scaffold(
       appBar: AppBar(
-        title: Text("Ant Farm: Tutorial"),
+        title: Text(
+          "Ant Farm: Tutorial",
+          style: AppThemes.appbarText()
+        ),
         backgroundColor: Colors.black,
       )
     );

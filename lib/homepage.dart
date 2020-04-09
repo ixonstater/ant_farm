@@ -40,12 +40,12 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             ListTile(
               title: Text(
-                "New Map",
+                "Map Builder",
                 style: AppThemes.listTileText()  
               ),
               onTap: () {
                 Navigator.pop(build);
-                return Navigator.pushNamed(build, 'newMap');
+                return Navigator.pushNamed(build, 'buildMap');
               },
             ),
             ListTile(
