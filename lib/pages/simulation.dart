@@ -19,13 +19,15 @@ const String testJson = """{
     ]
 }""";
 //values on a per-minute basis
+//food durability = how many seconds food should last for
 const String testSimJson = """{
     "isValid": true,
     "foodSpawnRate": 10,
     "antSpawnRate": 20,
     "antSpawnCeiling": 100,
     "foodToAntRatio": 0.23,
-    "starvationPeriod": 40
+    "starvationPeriod": 40,
+    "foodDurability": 40
 }""";
 
 class Farm extends StatelessWidget{
@@ -40,6 +42,15 @@ class Farm extends StatelessWidget{
           style: AppThemes.appbarText()
         ),
         backgroundColor: Colors.black,
+      ),
+      body: Align(
+        alignment: Alignment.center,
+        child: RaisedButton(
+          onPressed: () => controler.model.iterate(),
+          child: Text(
+            "Iterate"
+          )
+        )
       )
     );
   }
@@ -79,7 +90,10 @@ class SimModel{
 
   int starvationPeriod;
   int antSpawnCeiling;
+  int foodDurability;
   double foodToAntRatio;
+  int width;
+  int height;
   final double iterationPeriod = 0.85;
   
   Map map;
@@ -96,6 +110,9 @@ class SimModel{
       this.antSpawnCeiling = decodedJson["antSpawnCeiling"];
       this.foodToAntRatio = decodedJson["foodToAntRatio"];
       this.starvationPeriod = decodedJson["starvationPeriod"];
+      this.foodDurability = this.convertSecsToIterations(decodedJson["foodDurability"]);
+      this.width = this.map.cells.length;
+      this.height = this.map.cells[0].length;
     }
     else {
       throw("Invalid simulation loaded");
@@ -108,54 +125,123 @@ class SimModel{
     this.loopAnts();
     this.spawnNewAnt(false);
     this.spawnNewFood();
+    this.removeOldFeedings();
     return this.processRatio();
   }
 
   void loopAnts(){
+    List<Ant> ants = new List();
+
     for(Ant ant in this.ants){
+      ant.iterationsSinceLastFood++;
       this.moveAnt(ant);
       this.feedAnt(ant);
-      this.starveAnt(ant);
+
+      if(!this.antIsDead(ant)){
+        ants.add(ant);
+      }
     }
+
+    this.ants = ants;
   }
 
   void moveAnt(Ant ant){
+    Random random = new Random();
     var potentialDirections = this.map.getValidDirections(ant.posX, ant.posY);
+
+    if (!potentialDirections.contains(ant.currentDirection)){
+      var newDirectionIndex = random.nextInt(potentialDirections.length);
+      var newDirection = potentialDirections[newDirectionIndex];
+      ant.currentDirection = newDirection;
+    }
+
+    if(ant.currentDirection == TOP){
+      ant.posY--;
+    }
+    else if(ant.currentDirection == RIGHT){
+      ant.posX++;
+    }
+    else if(ant.currentDirection == BOTTOM){
+      ant.posY++;
+    }
+    else if(ant.currentDirection == LEFT){
+      ant.posX--;
+    }
   }
 
   void feedAnt(Ant ant){
-
+    int numFoods = this.map.eatFood(ant.posX, ant.posY);
+    if(numFoods > 0){
+      ant.iterationsSinceLastFood = 0;
+    }
+    List<Feeding> newFeedings = List.generate(numFoods, (index) => new Feeding());
+    this.feedings.addAll(newFeedings);
   }
 
-  void starveAnt(Ant ant){
+  bool antIsDead(Ant ant){
+    if(ant.iterationsSinceLastFood > this.starvationPeriod){
+      return true;
+    }
 
+    return false;
+  }
+
+  void removeOldFeedings(){
+    List<Feeding> feedings = new List();
+    for(Feeding feeding in this.feedings){
+      if(this.foodDurability > feeding.age){
+        feeding.age++;
+        feedings.add(feeding);
+      }
+    }
+
+    this.feedings = feedings;
   }
 
   void spawnNewAnt(bool initial){
     if (this.antSpawnRate <= this.lastAntSpawnEventAge || initial){
+      this.lastAntSpawnEventAge = 0;
       Random random = new Random();
-      var spawnX = random.nextInt(this.map.cells.length);
-      var spawnY = random.nextInt(this.map.cells.length);
+      var spawnX = random.nextInt(this.width);
+      var spawnY = random.nextInt(this.height);
       var potentialDirections = this.map.getValidDirections(spawnX, spawnY);
       var newDirectionIndex = random.nextInt(potentialDirections.length);
       var newDirection = potentialDirections[newDirectionIndex];
       Ant ant = new Ant(spawnX, spawnY, newDirection);
       this.ants.add(ant);
+
+      Feeding feeding = new Feeding();
+      this.feedings.add(feeding);
+    }
+    else {
+      this.lastAntSpawnEventAge++;
     }
   }
 
   void spawnNewFood(){
-
+    if(this.foodSpawnRate <= this.lastFoodSpawnEventAge){
+      this.lastFoodSpawnEventAge = 0;
+      Random random = new Random();
+      var spawnX = random.nextInt(this.width);
+      var spawnY = random.nextInt(this.height);
+      this.map.addFood(spawnX, spawnY);
+    } else {
+      this.lastFoodSpawnEventAge++;
+    }
   }
 
   bool processRatio(){
-    return this.feedings.length / this.ants.length < this.foodToAntRatio;
+    return this.feedings.length / this.ants.length > this.foodToAntRatio;
   }
 
   int convertPerMinuteToNumIterations(int eventsPerMinute){
     double iterationsPerMinute = 60 / this.iterationPeriod;
     double iterationsPerEvent = iterationsPerMinute / eventsPerMinute;
     return iterationsPerEvent.round();
+  }
+
+  int convertSecsToIterations(int secondsPerEvent){
+    return (secondsPerEvent / this.iterationPeriod).round();
   }
 
 }
@@ -192,25 +278,32 @@ class Map{
     return validDirections;
   }
 
-  void setFood(int x, int y, bool hasFood){
-    this.cells[x][y].hasFood = hasFood;
+  void addFood(int x, int y){
+    this.cells[x][y].numFood++;
+  }
+
+  int eatFood(int x, int y){
+    int numFood = this.cells[x][y].numFood;
+    this.cells[x][y].numFood = 0;
+    return numFood;
+
   }
 }
 
 class Ant{
   int posX;
   int posY;
-  int turnsSinceLastFood = 0;
+  int iterationsSinceLastFood = 0;
   int currentDirection;
   Ant(this.posX, this.posY, this.currentDirection);
 }
 
 class Feeding{
-  int age;
+  int age = 0;
 }
 
 class GridCell{
-  bool hasFood = false;
+  int numFood = 0;
   List openDirections;
   GridCell(this.openDirections);
 }
