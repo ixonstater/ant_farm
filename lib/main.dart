@@ -13,8 +13,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Farm(),
-      // home: HomePage(),
+      // home: Farm(),
+      home: HomePage(),
       routes: {
         'buildMap': (context) => new NewMap(),
         'configSim': (context) => new SimulationConfig(key),

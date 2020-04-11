@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:zoom_widget/zoom_widget.dart';
 import 'package:ant_farm/themes/themes.dart';
 import 'package:flutter/material.dart';
 import '../processing/consts.dart';
@@ -44,15 +45,34 @@ class Farm extends StatelessWidget{
         ),
         backgroundColor: Colors.black,
       ),
-      body: Align(
-        alignment: Alignment.center,
-        child: RaisedButton(
-          onPressed: () => controler.model.iterate(),
-          child: Text(
-            "Iterate"
-          )
+      body: Zoom(
+        width: 1000,
+        height: 1000,
+        initZoom: 0.0,
+        child: Center(
+            child: Text("Happy zoom!!"),
         )
-      )
+      ),
+      endDrawer: Drawer(
+        child: ListView(
+          children: <Widget>[
+            ListTile(
+              title: Text(
+                "Simulation Stats",
+                style: AppThemes.listTileText()
+              ),
+              onTap: (){},
+            ),
+            ListTile(
+              title: Text(
+                "View Farm",
+                style: AppThemes.listTileText()
+              ),
+              onTap: (){},
+            )
+          ]
+        )
+      ),
     );
   }
 }
