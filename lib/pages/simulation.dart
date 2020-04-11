@@ -130,7 +130,7 @@ class SimModel{
     return this.processRatio();
   }
 
-  void loopAnts(){//TODO Change to linked list
+  void loopAnts(){
     for(Ant ant in this.ants){
       ant.iterationsSinceLastFood++;
       this.moveAnt(ant);
