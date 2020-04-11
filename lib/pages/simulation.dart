@@ -32,9 +32,35 @@ const String testSimJson = """{
     "foodDurability": 40
 }""";
 
-class Farm extends StatelessWidget{
-  final Controller controler = new Controller();
+class Farm extends StatefulWidget{
   Farm({Key key}) : super(key: key);
+
+  @override
+  _FarmState createState() => new _FarmState(key);
+}
+
+class _FarmState extends State<Farm>{
+  final Controller controler = new Controller();
+  final Key key;
+
+  static const selectSimulation = 0;
+  static const viewSimulationStats = 1;
+  static const viewFarm = 2;
+  
+  int displayedContent = _FarmState.selectSimulation;
+  _FarmState(this.key);
+
+  selectBody(){
+    if(this.displayedContent == _FarmState.selectSimulation){
+      return SelectSimulation(key: key);
+    }
+    else if(this.displayedContent == _FarmState.viewSimulationStats){
+      return ViewSimulationStats(key: key);
+    }
+    else if(this.displayedContent == _FarmState.viewFarm){
+      return ViewFarm(key: key);
+    }
+  }
 
   Widget build(BuildContext build){
     return Scaffold(
@@ -45,34 +71,81 @@ class Farm extends StatelessWidget{
         ),
         backgroundColor: Colors.black,
       ),
-      body: Zoom(
-        width: 1000,
-        height: 1000,
-        initZoom: 0.0,
-        child: Center(
-            child: Text("Happy zoom!!"),
-        )
-      ),
+      body: this.selectBody(),
       endDrawer: Drawer(
         child: ListView(
           children: <Widget>[
             ListTile(
               title: Text(
-                "Simulation Stats",
-                style: AppThemes.listTileText()
-              ),
-              onTap: (){},
-            ),
-            ListTile(
-              title: Text(
                 "View Farm",
                 style: AppThemes.listTileText()
               ),
-              onTap: (){},
+              onTap: () => setState(() {
+                this.displayedContent = _FarmState.viewFarm;
+                Navigator.pop(build);
+              }),
+            ),
+            ListTile(
+              title: Text(
+                "Simulation Stats",
+                style: AppThemes.listTileText()
+              ),
+              onTap: () => setState(() {
+                this.displayedContent = _FarmState.viewSimulationStats;
+                Navigator.pop(build);
+              }),
+            ),
+            ListTile(
+              title: Text(
+                "Select Simulation",
+                style: AppThemes.listTileText()
+              ),
+              onTap: () => setState(() {
+                this.displayedContent = _FarmState.selectSimulation;
+                Navigator.pop(build);
+              }),
             )
           ]
         )
       ),
+    );
+  }
+}
+
+class SelectSimulation extends StatelessWidget{
+  SelectSimulation({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext build){
+    return Center(
+      child: Text("Select Sim Here")
+    );
+  }
+}
+
+class ViewSimulationStats extends StatelessWidget{
+  ViewSimulationStats({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext build){
+    return Center(
+      child: Text("View Stats Here")
+    );
+  }
+}
+
+class ViewFarm extends StatelessWidget{
+  ViewFarm({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext build){
+    return Zoom(
+      width: 1000,
+      height: 1000,
+      initZoom: 0.0,
+      child: Center(
+          child: Text("Happy zoom!!"),
+      )
     );
   }
 }
