@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
@@ -97,8 +98,8 @@ class SimModel{
   final double iterationPeriod = 0.85;
   
   Map map;
-  List<Ant> ants = new List();
-  List<Feeding> feedings = new List();
+  LinkedList<Ant> ants = new LinkedList();
+  LinkedList<Feeding> feedings = new LinkedList();
 
 
   void assembleModel(String simJson, String mapJson){
@@ -129,20 +130,13 @@ class SimModel{
     return this.processRatio();
   }
 
-  void loopAnts(){
-    List<Ant> ants = new List();
-
+  void loopAnts(){//TODO Change to linked list
     for(Ant ant in this.ants){
       ant.iterationsSinceLastFood++;
       this.moveAnt(ant);
       this.feedAnt(ant);
-
-      if(!this.antIsDead(ant)){
-        ants.add(ant);
-      }
+      this.starveAnt(ant);
     }
-
-    this.ants = ants;
   }
 
   void moveAnt(Ant ant){
@@ -173,29 +167,31 @@ class SimModel{
     int numFoods = this.map.eatFood(ant.posX, ant.posY);
     if(numFoods > 0){
       ant.iterationsSinceLastFood = 0;
+
+      for(int i = 0; i < numFoods; i++){
+        Feeding feeding = new Feeding();
+        this.feedings.add(feeding);
+      }
     }
-    List<Feeding> newFeedings = List.generate(numFoods, (index) => new Feeding());
-    this.feedings.addAll(newFeedings);
   }
 
-  bool antIsDead(Ant ant){
+  void starveAnt(Ant ant){
     if(ant.iterationsSinceLastFood > this.starvationPeriod){
-      return true;
+      ant.unlink();
     }
-
-    return false;
+    else {
+      ant.iterationsSinceLastFood++;
+    }
   }
 
   void removeOldFeedings(){
-    List<Feeding> feedings = new List();
     for(Feeding feeding in this.feedings){
       if(this.foodDurability > feeding.age){
         feeding.age++;
-        feedings.add(feeding);
+      } else {
+        feeding.unlink();
       }
     }
-
-    this.feedings = feedings;
   }
 
   void spawnNewAnt(bool initial){
@@ -290,7 +286,7 @@ class Map{
   }
 }
 
-class Ant{
+class Ant extends LinkedListEntry<Ant>{
   int posX;
   int posY;
   int iterationsSinceLastFood = 0;
@@ -298,7 +294,7 @@ class Ant{
   Ant(this.posX, this.posY, this.currentDirection);
 }
 
-class Feeding{
+class Feeding extends LinkedListEntry<Feeding>{
   int age = 0;
 }
 
