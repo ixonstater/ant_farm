@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:zoom_widget/zoom_widget.dart';
 import 'package:ant_farm/themes/themes.dart';
@@ -33,32 +34,33 @@ const String testSimJson = """{
 }""";
 
 class Farm extends StatefulWidget{
+  final Controller controller = new Controller();
   Farm({Key key}) : super(key: key);
 
   @override
-  _FarmState createState() => new _FarmState(key);
+  _FarmState createState() => new _FarmState(this.controller, key);
 }
 
 class _FarmState extends State<Farm>{
-  final Controller controler = new Controller();
+  final Controller controller;
   final Key key;
 
   static const selectSimulation = 0;
   static const viewSimulationStats = 1;
   static const viewFarm = 2;
   
-  int displayedContent = _FarmState.selectSimulation;
-  _FarmState(this.key);
+  int displayedContent = _FarmState.viewFarm;
+  _FarmState(this.controller, this.key);
 
   selectBody(){
     if(this.displayedContent == _FarmState.selectSimulation){
-      return SelectSimulation(key: key);
+      return SelectSimulation(this.controller, key: key);
     }
     else if(this.displayedContent == _FarmState.viewSimulationStats){
-      return ViewSimulationStats(key: key);
+      return ViewSimulationStats(this.controller, key: key);
     }
     else if(this.displayedContent == _FarmState.viewFarm){
-      return ViewFarm(key: key);
+      return ViewFarm(this.controller, key: key);
     }
   }
 
@@ -84,6 +86,7 @@ class _FarmState extends State<Farm>{
                 this.displayedContent = _FarmState.viewFarm;
                 Navigator.pop(build);
               }),
+              onLongPress: (){this.controller.redraw();},
             ),
             ListTile(
               title: Text(
@@ -113,7 +116,7 @@ class _FarmState extends State<Farm>{
 }
 
 class SelectSimulation extends StatelessWidget{
-  SelectSimulation({Key key}) : super(key: key);
+  SelectSimulation(Controller controller, {Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext build){
@@ -124,7 +127,7 @@ class SelectSimulation extends StatelessWidget{
 }
 
 class ViewSimulationStats extends StatelessWidget{
-  ViewSimulationStats({Key key}) : super(key: key);
+  ViewSimulationStats(Controller controller, {Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext build){
@@ -135,27 +138,74 @@ class ViewSimulationStats extends StatelessWidget{
 }
 
 class ViewFarm extends StatelessWidget{
-  ViewFarm({Key key}) : super(key: key);
+  final Controller controller;
+  ViewFarm(this.controller, {Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext build){
+    Listenable repaint = new RepaintListenable();
+    Renderer renderer = new Renderer(repaint, this.controller.getModelState);
+    this.controller.setRenderer(renderer, repaint);
+
     return Zoom(
-      width: 1000,
-      height: 1000,
+      width: 1800,
+      height: 1800,
       initZoom: 0.0,
-      child: Center(
-          child: Text("Happy zoom!!"),
+      child: FittedBox(
+        child:SizedBox(
+          width: 1800,
+          height: 1800,
+          child: CustomPaint(
+            painter: renderer
+          )
+        )
       )
     );
   }
 }
 
+class Renderer extends CustomPainter{
+  Function getModelState;
+
+  Renderer(RepaintListenable repaint, this.getModelState) : super(repaint: repaint);
+
+  @override
+  void paint(Canvas canvas, Size size){
+    List modelRefs = getModelState();
+    Paint paint = new Paint()
+    ..color = Colors.blue
+    ..isAntiAlias = true;
+    canvas.drawCircle(Offset(100.0, 100.0), 50.0, paint);
+  }
+
+  @override
+  bool shouldRepaint(Renderer oldDelegate) => false;
+
+  void initializeGameBoard(List<List> grid){
+    
+  }
+
+  void drawStage(LinkedList<Ant> ants, List<List> grid){
+
+  }
+}
+
+class RepaintListenable extends ChangeNotifier{
+  void startRedrawEvent(){
+    notifyListeners();
+  }
+}
+
 class Controller{
   SimModel model = new SimModel();
-  
+  Renderer renderer;
+  RepaintListenable repaint;
+  double radius = 50.0;
+
   Controller(){
+    this.renderer = null;
+    this.repaint = null;
     this.model.assembleModel(testSimJson, testJson);
-    this.model.iterate();
   }
 
   void startSim(){
@@ -166,12 +216,27 @@ class Controller{
 
   }
 
-}
+  void advanceSimulation(){
 
-class Renderer{
-  Canvas canvas;
-  Renderer(this.canvas);
+  }
 
+  void redraw(){
+    this.repaint.startRedrawEvent();
+  }
+
+  void setRenderer(Renderer renderer, RepaintListenable repaint){
+    this.renderer = renderer;
+    this.repaint = repaint;
+    this.renderer.initializeGameBoard(this.model.map.cells);
+  }
+
+  List getModelState(){
+    return [this.model.ants, this.model.map.cells];
+  }
+
+  void setModel(SimModel model){
+    this.model = model;
+  }
 
 }
 
@@ -288,7 +353,7 @@ class SimModel{
   }
 
   void spawnNewAnt(bool initial){
-    if (this.antSpawnRate <= this.lastAntSpawnEventAge || initial){
+    if ((this.antSpawnRate <= this.lastAntSpawnEventAge && this.ants.length <= this.antSpawnCeiling) || initial){
       this.lastAntSpawnEventAge = 0;
       Random random = new Random();
       var spawnX = random.nextInt(this.width);
