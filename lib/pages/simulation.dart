@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:zoom_widget/zoom_widget.dart';
+import 'package:ant_farm/processing/common_classes.dart';
 import 'package:ant_farm/themes/themes.dart';
 import 'package:flutter/material.dart';
 import '../processing/consts.dart';
@@ -137,55 +137,75 @@ class ViewSimulationStats extends StatelessWidget{
   }
 }
 
-class ViewFarm extends StatelessWidget{
+class ViewFarm extends StatefulWidget{
   final Controller controller;
   ViewFarm(this.controller, {Key key}) : super(key: key);
+
+  @override
+  _ViewFarmState createState() => new _ViewFarmState(this.controller, key);
+}
+
+class _ViewFarmState extends State<ViewFarm>{
+  final Controller controller;
+  double canvasDimensions = 0.0;
+  _ViewFarmState(this.controller, Key key);
 
   @override
   Widget build(BuildContext build){
     Listenable repaint = new RepaintListenable();
     Renderer renderer = new Renderer(repaint, this.controller.getModelState);
+    this.getInitialCanvasDimensions(build);
     this.controller.setRenderer(renderer, repaint);
 
-    return Zoom(
-      width: 1800,
-      height: 1800,
-      initZoom: 0.0,
-      child: FittedBox(
-        child:SizedBox(
-          width: 1800,
-          height: 1800,
-          child: CustomPaint(
-            painter: renderer
-          )
+    return FittedBox(
+      child:SizedBox(
+        width: this.canvasDimensions,
+        height: this.canvasDimensions,
+        child: CustomPaint(
+          painter: renderer
         )
       )
     );
+  }
+
+  void getInitialCanvasDimensions(BuildContext build){
+    var screenSize = MediaQuery.of(build).size;
+    this.canvasDimensions = screenSize.width < screenSize.height ? screenSize.width : screenSize.height;
   }
 }
 
 class Renderer extends CustomPainter{
   Function getModelState;
+  Paint wallPaint = new Paint()
+  ..color = Colors.black
+  ..strokeWidth = 3;
 
   Renderer(RepaintListenable repaint, this.getModelState) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size){
     List modelRefs = getModelState();
-    Paint paint = new Paint()
-    ..color = Colors.blue
-    ..isAntiAlias = true;
-    canvas.drawCircle(Offset(100.0, 100.0), 50.0, paint);
+    this.drawBoard(modelRefs[1], canvas, size);
+    this.drawStage(modelRefs, canvas, size);
   }
 
   @override
   bool shouldRepaint(Renderer oldDelegate) => false;
 
-  void initializeGameBoard(List<List> grid){
-    
+  void drawBoard(List grid, Canvas canvas, Size size){
+    double wallUnitLength = size.width / grid.length;
+
+    for (int x = 0; x < grid.length; x++){
+      List column = grid[x];
+      for (int y =0; y < column.length; y++){
+        List cell = column[y].openDirections;
+        
+        MapRenderer.drawBox(x, y, cell, wallUnitLength, canvas, this.wallPaint);
+      }
+    }
   }
 
-  void drawStage(LinkedList<Ant> ants, List<List> grid){
+  void drawStage(List modelRefs, Canvas canvas, Size size){
 
   }
 }
@@ -227,7 +247,7 @@ class Controller{
   void setRenderer(Renderer renderer, RepaintListenable repaint){
     this.renderer = renderer;
     this.repaint = repaint;
-    this.renderer.initializeGameBoard(this.model.map.cells);
+    this.redraw();
   }
 
   List getModelState(){
@@ -408,12 +428,12 @@ class Map{
     if(decodedJson['isValid']){
       var gridData = decodedJson['gridSpecs'];
       for (int x = 0; x < gridData.length; x++){
-        var rowData = gridData[x];
-        List<GridCell> row = [];
-        for (int y = 0; y < rowData.length; y++){
-          row.add(new GridCell(rowData[y]));
+        var columnData = gridData[x];
+        List<GridCell> column = [];
+        for (int y = 0; y < columnData.length; y++){
+          column.add(new GridCell(columnData[y]));
         }
-        this.cells.add(row);
+        this.cells.add(column);
       }
     }
     else {
