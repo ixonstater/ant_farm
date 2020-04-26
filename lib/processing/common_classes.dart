@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 class MapRenderer{
@@ -8,9 +10,25 @@ class MapRenderer{
     [[0,1],[0,0]]//left
   ];
 
-  static void drawBox(int x, int y, List dirs, double wallUnitLength, Canvas canvas, Paint paint){
+  static List<List> getOffsetsFromGrid(List grid, double wallUnitLength){
+    List<List> wallPoints = [];
+
+    for (int x = 0; x < grid.length; x++){
+      List column = grid[x];
+      for (int y =0; y < column.length; y++){
+        List cell = column[y].openDirections;
+        wallPoints += MapRenderer.getCellOffsets(x, y, cell, wallUnitLength);
+      }
+    }
+
+    return wallPoints;
+    // TODO: filter wallpoints list to remove duplicates
+  }
+
+  static List<List> getCellOffsets(int x, int y, List dirs, double wallUnitLength){
     double originalX = x * wallUnitLength;
     double originalY = y * wallUnitLength;
+    List<List> walls = [];
 
     for (int i = 0; i < 4; i++){
       if(!dirs[i]){
@@ -22,8 +40,10 @@ class MapRenderer{
         Offset start = Offset(canvasStartX, canvasStartY);
         Offset end = Offset(canvasEndX, canvasEndY);
 
-        canvas.drawLine(start, end, paint);
+        walls.add([start, end]);
       }
     }
+
+    return walls;
   }
 }

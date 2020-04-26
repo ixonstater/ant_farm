@@ -153,8 +153,8 @@ class _ViewFarmState extends State<ViewFarm>{
   @override
   Widget build(BuildContext build){
     Listenable repaint = new RepaintListenable();
-    Renderer renderer = new Renderer(repaint, this.controller.getModelState);
     this.getInitialCanvasDimensions(build);
+    Renderer renderer = new Renderer(repaint, this.controller.getModelState, this.canvasDimensions);
     this.controller.setRenderer(renderer, repaint);
 
     return FittedBox(
@@ -179,8 +179,10 @@ class Renderer extends CustomPainter{
   Paint wallPaint = new Paint()
   ..color = Colors.black
   ..strokeWidth = 3;
+  double initialCanvasDimensions;
+  List<List> wallPoints;
 
-  Renderer(RepaintListenable repaint, this.getModelState) : super(repaint: repaint);
+  Renderer(RepaintListenable repaint, this.getModelState, this.initialCanvasDimensions) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size){
@@ -192,16 +194,14 @@ class Renderer extends CustomPainter{
   @override
   bool shouldRepaint(Renderer oldDelegate) => false;
 
-  void drawBoard(List grid, Canvas canvas, Size size){
-    double wallUnitLength = size.width / grid.length;
+  void getWallPoints(List grid){
+    double wallUnitLength = this.initialCanvasDimensions / grid.length;
+    this.wallPoints = MapRenderer.getOffsetsFromGrid(grid, wallUnitLength);
+  }
 
-    for (int x = 0; x < grid.length; x++){
-      List column = grid[x];
-      for (int y =0; y < column.length; y++){
-        List cell = column[y].openDirections;
-        
-        MapRenderer.drawBox(x, y, cell, wallUnitLength, canvas, this.wallPaint);
-      }
+  void drawBoard(List grid, Canvas canvas, Size size){
+    for (var wall in this.wallPoints){
+      canvas.drawLine(wall[0], wall[1], this.wallPaint);
     }
   }
 
@@ -247,6 +247,7 @@ class Controller{
   void setRenderer(Renderer renderer, RepaintListenable repaint){
     this.renderer = renderer;
     this.repaint = repaint;
+    renderer.getWallPoints(this.model.map.cells);
     this.redraw();
   }
 
