@@ -2,31 +2,86 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:async';
+import 'dart:developer';
 
 import 'package:ant_farm/processing/common_classes.dart';
 import 'package:ant_farm/themes/themes.dart';
 import 'package:flutter/material.dart';
 import '../processing/consts.dart';
 
+// const String testJson = """{
+//     "isValid": true,
+//     "gridSpecs": [
+//         [
+//           [false, false, true, false],
+//           [true, true, true, false],
+//           [true, false, false, false]
+//         ],
+//         [
+//           [false, true, true, false],
+//           [true, true, true, true],
+//           [true, false, false, false]
+//         ],
+//         [
+//           [false, false, false, true],
+//           [false, false, true, true],
+//           [true, false, false, false]
+//         ]
+//     ]
+// }""";
 const String testJson = """{
-    "isValid": true,
-    "gridSpecs": [
-        [
-          [false, false, true, false],
-          [true, true, true, false],
-          [true, false, false, false]
-        ],
-        [
-          [false, true, true, false],
-          [true, true, true, true],
-          [true, false, false, false]
-        ],
-        [
-          [false, false, false, true],
-          [false, false, true, true],
-          [true, false, false, false]
-        ]
+  "isValid": true,
+  "gridSpecs": [
+    [
+      [false, true, true, false],
+      [true, false, false, false],
+      [false, true, false, false],
+      [false, false, true, false],
+      [true, true, false, false],
+      [false, true, false, false]
+    ],
+    [
+      [false, false, true, true],
+      [true, true, true, false],
+      [true, false, false, true],
+      [false, true, true, false],
+      [true, false, false, true],
+      [false, true, false, true]
+    ],
+    [
+      [false, true, true, false],
+      [true, false, true, true],
+      [true, false, true, false],
+      [true, true, false, true],
+      [false, true, true, false],
+      [true, false, false, true]
+    ],
+    [
+      [false, false, false, true],
+      [false, true, true, false],
+      [true, true, false, false],
+      [false, true, true, true],
+      [true, false, false, true],
+      [false, true, false, false]
+    ],
+    [
+      [false, true, false, false],
+      [false, true, true, true],
+      [true, true, true, true],
+      [true, false, true, true],
+      [true, true, true, false],
+      [true, false, false, true]
+    ],
+    [
+      [false, false, true, true],
+      [true, false, false, true],
+      [false, false, true, true],
+      [true, false, false, false],
+      [false, false, true, true],
+      [true, false, false, false]
     ]
+  ]
 }""";
 //values on a per-minute basis
 //food durability = how many seconds food should last for
@@ -34,9 +89,9 @@ const String testSimJson = """{
     "isValid": true,
     "foodSpawnRate": 10,
     "antSpawnRate": 20,
-    "antSpawnCeiling": 3,
+    "antSpawnCeiling": 1,
     "foodToAntRatio": 0.23,
-    "starvationPeriod": 40,
+    "starvationPeriod": 10,
     "foodDurability": 40
 }""";
 
@@ -67,6 +122,7 @@ class _FarmState extends State<Farm>{
       return ViewSimulationStats(this.controller, key: key);
     }
     else if(this.displayedContent == _FarmState.viewFarm){
+      this.controller.startSim();
       return ViewFarm(this.controller, key: key);
     }
   }
@@ -164,22 +220,21 @@ class _ViewFarmState extends State<ViewFarm>{
     Renderer renderer = new Renderer(repaint, this.controller.getModelState, this.canvasDimensions);
     this.controller.setRenderer(renderer, repaint);
 
-    return ListView(
-      children: <Widget>[
-        FittedBox(
-          child:SizedBox(
-            width: this.canvasDimensions,
-            height: this.canvasDimensions,
-            child: CustomPaint(
-              painter: renderer
-            )
-          )
-        ),
-        RaisedButton(
-          onPressed: () => this.controller.advanceSimulation(),
+    return FittedBox(
+      child:SizedBox(
+        width: this.canvasDimensions,
+        height: this.canvasDimensions,
+        child: CustomPaint(
+          painter: renderer
         )
-      ]
+      )
     );
+  }
+
+  @override
+  void dispose(){
+    this.controller.renderer = null;
+    super.dispose();
   }
 
   void getInitialCanvasDimensions(BuildContext build){
@@ -264,6 +319,7 @@ class Controller{
   Renderer renderer;
   RepaintListenable repaint;
   double radius = 50.0;
+  Timer runner;
 
   Controller(){
     this.renderer = null;
@@ -272,16 +328,18 @@ class Controller{
   }
 
   void startSim(){
-
+    this.runner = new Timer.periodic(const Duration(milliseconds: 850), this.advanceSimulation);
   }
 
   void stopSim(){
-
+    this.runner.cancel();
   }
 
-  void advanceSimulation(){
+  void advanceSimulation(Timer timer){
     this.model.iterate();
-    this.redraw();
+    if(this.renderer != null){
+      this.redraw();
+    }
   }
 
   void redraw(){
@@ -366,11 +424,9 @@ class SimModel{
     Random random = new Random();
     var potentialDirections = this.map.getValidDirections(ant.posX, ant.posY);
 
-    if (!potentialDirections.contains(ant.currentDirection)){
-      var newDirectionIndex = random.nextInt(potentialDirections.length);
-      var newDirection = potentialDirections[newDirectionIndex];
-      ant.currentDirection = newDirection;
-    }
+    var newDirectionIndex = random.nextInt(potentialDirections.length);
+    var newDirection = potentialDirections[newDirectionIndex];
+    ant.currentDirection = newDirection;
 
     if(ant.currentDirection == TOP){
       ant.posY--;
@@ -418,7 +474,7 @@ class SimModel{
   }
 
   void spawnNewAnt(bool initial){
-    if ((this.antSpawnRate <= this.lastAntSpawnEventAge && this.ants.length <= this.antSpawnCeiling) || initial){
+    if ((this.antSpawnRate <= this.lastAntSpawnEventAge && this.ants.length < this.antSpawnCeiling) || initial){
       this.lastAntSpawnEventAge = 0;
       Random random = new Random();
       var spawnX = random.nextInt(this.width);
