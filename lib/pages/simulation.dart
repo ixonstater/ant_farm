@@ -12,12 +12,19 @@ const String testJson = """{
     "isValid": true,
     "gridSpecs": [
         [
-          [false, true, false, false],
-          [false, true, false, false]
+          [false, false, true, false],
+          [true, true, true, false],
+          [true, false, false, false]
         ],
         [
+          [false, true, true, false],
+          [true, true, true, true],
+          [true, false, false, false]
+        ],
+        [
+          [false, false, false, true],
           [false, false, true, true],
-          [true, false, false, true]
+          [true, false, false, false]
         ]
     ]
 }""";
@@ -27,7 +34,7 @@ const String testSimJson = """{
     "isValid": true,
     "foodSpawnRate": 10,
     "antSpawnRate": 20,
-    "antSpawnCeiling": 100,
+    "antSpawnCeiling": 3,
     "foodToAntRatio": 0.23,
     "starvationPeriod": 40,
     "foodDurability": 40
@@ -157,14 +164,21 @@ class _ViewFarmState extends State<ViewFarm>{
     Renderer renderer = new Renderer(repaint, this.controller.getModelState, this.canvasDimensions);
     this.controller.setRenderer(renderer, repaint);
 
-    return FittedBox(
-      child:SizedBox(
-        width: this.canvasDimensions,
-        height: this.canvasDimensions,
-        child: CustomPaint(
-          painter: renderer
+    return ListView(
+      children: <Widget>[
+        FittedBox(
+          child:SizedBox(
+            width: this.canvasDimensions,
+            height: this.canvasDimensions,
+            child: CustomPaint(
+              painter: renderer
+            )
+          )
+        ),
+        RaisedButton(
+          onPressed: () => this.controller.advanceSimulation(),
         )
-      )
+      ]
     );
   }
 
@@ -179,6 +193,10 @@ class Renderer extends CustomPainter{
   Paint wallPaint = new Paint()
   ..color = Colors.black
   ..strokeWidth = 3;
+  Paint foodPaint = new Paint()
+  ..color = Colors.orange;
+  Paint antPaint = new Paint()
+  ..color = Colors.purple;
   double initialCanvasDimensions;
   List<List> wallPoints;
 
@@ -206,7 +224,32 @@ class Renderer extends CustomPainter{
   }
 
   void drawStage(List modelRefs, Canvas canvas, Size size){
+    double wallUnitLength = size.width / modelRefs[1].length;
+    double cellCenter = wallUnitLength / 2;
 
+    double foodSize = wallUnitLength / 4;
+    for (int x = 0; x < modelRefs[1].length; x++){
+      for (int y = 0; y < modelRefs[1].length; y++){
+        if(modelRefs[1][x][y].numFood > 0){
+          double canvasX = wallUnitLength * x + cellCenter;
+          double canvasY = wallUnitLength * y + cellCenter;
+          Rect foodRect = Rect.fromCenter(
+            center: Offset(canvasX, canvasY),
+            width: foodSize,
+            height: foodSize
+          );
+          canvas.drawRect(foodRect, this.foodPaint);
+        } 
+      }
+    }
+
+    double radius = wallUnitLength / 16;
+    for (Ant ant in modelRefs[0]){
+      double canvasX = wallUnitLength * ant.posX + cellCenter;
+      double canvasY = wallUnitLength * ant.posY + cellCenter;
+      Offset center = Offset(canvasX, canvasY);
+      canvas.drawCircle(center, radius, this.antPaint);
+    }
   }
 }
 
@@ -237,7 +280,8 @@ class Controller{
   }
 
   void advanceSimulation(){
-
+    this.model.iterate();
+    this.redraw();
   }
 
   void redraw(){
