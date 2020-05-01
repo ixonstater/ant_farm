@@ -83,16 +83,20 @@ const String testJson = """{
     ]
   ]
 }""";
-//values on a per-minute basis
-//food durability = how many seconds food should last for
+//foodSpawnRate = food per minute
+//antSpawnRate = ants per minute
+//antSpawnCeiling = num of ants allowed at any one time
+//foodToAntRatio = ...self explanatory
+//starvationPeriod = can move how many squares without food
+//foodDurability = how many seconds food should last for
 const String testSimJson = """{
     "isValid": true,
-    "foodSpawnRate": 10,
-    "antSpawnRate": 20,
-    "antSpawnCeiling": 1,
+    "foodSpawnRate": 100,
+    "antSpawnRate": 100,
+    "antSpawnCeiling": 3,
     "foodToAntRatio": 0.23,
-    "starvationPeriod": 10,
-    "foodDurability": 40
+    "starvationPeriod": 1000,
+    "foodDurability": 1000
 }""";
 
 class Farm extends StatefulWidget{
@@ -336,7 +340,7 @@ class Controller{
   }
 
   void advanceSimulation(Timer timer){
-    this.model.iterate();
+    bool simulationEnded = this.model.iterate();
     if(this.renderer != null){
       this.redraw();
     }
@@ -380,7 +384,9 @@ class SimModel{
   
   Map map;
   LinkedList<Ant> ants = new LinkedList();
+  List<Ant> antsToRemove = [];
   LinkedList<Feeding> feedings = new LinkedList();
+  List<Feeding> feedingsToRemove = [];
 
 
   void assembleModel(String simJson, String mapJson){
@@ -407,13 +413,13 @@ class SimModel{
     this.loopAnts();
     this.spawnNewAnt(false);
     this.spawnNewFood();
-    this.removeOldFeedings();
-    return this.processRatio();
+    this.expireOldFeedings();
+    this.removeFromLinkedList();
+    return this.simulationEnded();
   }
 
   void loopAnts(){
     for(Ant ant in this.ants){
-      ant.iterationsSinceLastFood++;
       this.moveAnt(ant);
       this.feedAnt(ant);
       this.starveAnt(ant);
@@ -454,21 +460,29 @@ class SimModel{
     }
   }
 
+  bool shouldStarveAnt(Ant ant){
+    return ant.iterationsSinceLastFood >= this.starvationPeriod;
+  }
+
   void starveAnt(Ant ant){
-    if(ant.iterationsSinceLastFood > this.starvationPeriod){
-      ant.unlink();
+    if(this.shouldStarveAnt(ant)){
+      this.antsToRemove.add(ant);
     }
     else {
       ant.iterationsSinceLastFood++;
     }
   }
 
-  void removeOldFeedings(){
+  bool shouldFeedingExpire(Feeding feeding){
+    return this.foodDurability <= feeding.age;
+  }
+
+  void expireOldFeedings(){
     for(Feeding feeding in this.feedings){
-      if(this.foodDurability > feeding.age){
-        feeding.age++;
+      if(this.shouldFeedingExpire(feeding)){
+        this.feedingsToRemove.add(feeding);
       } else {
-        feeding.unlink();
+        feeding.age++;
       }
     }
   }
@@ -505,14 +519,33 @@ class SimModel{
     }
   }
 
-  bool processRatio(){
-    return this.feedings.length / this.ants.length > this.foodToAntRatio;
+  void removeFromLinkedList(){
+    this.antsToRemove.forEach((element) => element.unlink());
+    this.feedingsToRemove.forEach((element) =>element.unlink());
+
+    this.antsToRemove = [];
+    this.feedingsToRemove = [];
+  }
+
+  bool simulationEnded(){
+    if(this.ants.length == 0){
+      return false;
+    }
+    else{
+      return this.feedings.length / this.ants.length > this.foodToAntRatio;
+    }
   }
 
   int convertPerMinuteToNumIterations(int eventsPerMinute){
     double iterationsPerMinute = 60 / this.iterationPeriod;
     double iterationsPerEvent = iterationsPerMinute / eventsPerMinute;
-    return iterationsPerEvent.round();
+    int wholeIterationsPerEvent = iterationsPerEvent.round();
+    if(wholeIterationsPerEvent < 1){
+      return 1;
+    }
+    else{
+      return wholeIterationsPerEvent;
+    }
   }
 
   int convertSecsToIterations(int secondsPerEvent){
@@ -540,6 +573,10 @@ class Map{
     else {
       throw("Invalid map loaded");
     }
+  }
+
+  Map.random(int dimension){
+
   }
 
   List getValidDirections(int x, int y){
