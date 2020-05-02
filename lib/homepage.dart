@@ -25,13 +25,6 @@ class HomePage extends StatelessWidget {
                 style: AppThemes.buttonText()
               ),
             ),
-            RaisedButton(
-              onPressed: () => Navigator.pushNamed(build, 'tutorial'),
-              child: Text(
-                "Instructions",
-                style: AppThemes.buttonText()
-              ),
-            )
           ]
         )
       ),
@@ -40,22 +33,22 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             ListTile(
               title: Text(
-                "Map Builder",
+                "Edit Simulation",
                 style: AppThemes.listTileText()  
               ),
               onTap: () {
                 Navigator.pop(build);
-                return Navigator.pushNamed(build, 'buildMap');
+                return Navigator.pushNamed(build, 'configSim');
               },
             ),
             ListTile(
               title: Text(
-                "Configure New Simulation",
+                "Instructions",
                 style: AppThemes.listTileText()  
               ),
               onTap: (){
                 Navigator.pop(build);
-                return Navigator.pushNamed(build, 'configSim');
+                return Navigator.pushNamed(build, 'tutorial');
               }
             )
           ]

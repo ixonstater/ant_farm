@@ -238,6 +238,7 @@ class _ViewFarmState extends State<ViewFarm>{
   @override
   void dispose(){
     this.controller.renderer = null;
+    this.controller.repaint = null;
     super.dispose();
   }
 
@@ -489,7 +490,7 @@ class SimModel{
 
   void spawnNewAnt(bool initial){
     if ((this.antSpawnRate <= this.lastAntSpawnEventAge && this.ants.length < this.antSpawnCeiling) || initial){
-      this.lastAntSpawnEventAge = 0;
+      this.lastAntSpawnEventAge = 1;
       Random random = new Random();
       var spawnX = random.nextInt(this.width);
       var spawnY = random.nextInt(this.height);
@@ -509,7 +510,7 @@ class SimModel{
 
   void spawnNewFood(){
     if(this.foodSpawnRate <= this.lastFoodSpawnEventAge){
-      this.lastFoodSpawnEventAge = 0;
+      this.lastFoodSpawnEventAge = 1;
       Random random = new Random();
       var spawnX = random.nextInt(this.width);
       var spawnY = random.nextInt(this.height);
