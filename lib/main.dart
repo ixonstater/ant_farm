@@ -12,11 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // home: Farm(),
-      home: HomePage(),
+      home: SimulationConfig(),
+      // home: HomePage(),
       routes: {
-        'configSim': (context) => new SimulationConfig(key),
-        'tutorial': (context) => new Tutorial(key),
+        'configSim': (context) => new SimulationConfig(),
+        'tutorial': (context) => new Tutorial(),
         'farm': (context) => new Farm()
       },
       theme: ThemeData(

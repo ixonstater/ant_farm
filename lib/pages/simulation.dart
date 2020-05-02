@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:ant_farm/processing/common_classes.dart';
 import 'package:ant_farm/themes/themes.dart';
