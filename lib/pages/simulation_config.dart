@@ -16,7 +16,10 @@ class _SimulationConfigState extends State<SimulationConfig>{
   static const SELECT_SIMULATION = 0;
   static const EDIT_SIMULATION = 1;
 
-  _SimulationConfigState(this.controller, this.key) : super();
+  _SimulationConfigState(this.controller, this.key) : super(){
+    this.controller.routeToEditSimulation = this.routeToEditSimulation;
+    this.controller.routeToSelectSimulation = this.routeToSelectSimulation;
+  }
 
   Widget selectBody(){
     if (this.displayedContent == _SimulationConfigState.SELECT_SIMULATION){
@@ -28,6 +31,18 @@ class _SimulationConfigState extends State<SimulationConfig>{
     else {
       return new SelectSimulation(this.controller, key: this.key);
     }
+  }
+
+  void routeToSelectSimulation(){
+    this.setState((){
+      this.displayedContent = _SimulationConfigState.SELECT_SIMULATION;
+    });
+  }
+
+  void routeToEditSimulation(){
+    this.setState((){
+      this.displayedContent = _SimulationConfigState.EDIT_SIMULATION;
+    });
   }
 
   Widget build(BuildContext build){
@@ -48,7 +63,7 @@ class _SimulationConfigState extends State<SimulationConfig>{
                 "Select Simulation",
                 style: AppThemes.listTileText()  
               ),
-              onTap: () => setState(() {
+              onTap: () => this.setState(() {
                 this.displayedContent = _SimulationConfigState.SELECT_SIMULATION;
                 Navigator.pop(build);
               }),
@@ -58,7 +73,7 @@ class _SimulationConfigState extends State<SimulationConfig>{
                 "Edit Simulation",
                 style: AppThemes.listTileText()  
               ),
-              onTap: () => setState(() {
+              onTap: () => this.setState(() {
                 this.displayedContent = _SimulationConfigState.EDIT_SIMULATION;
                 Navigator.pop(build);
               }),
@@ -80,8 +95,12 @@ class SelectSimulation extends StatefulWidget{
 
 class _SelectSimulationState extends State<SelectSimulation>{
   Controller controller;
-  bool showDialogErrorText = false;
-  _SelectSimulationState(this.controller);
+  TextEditingController newSimulationNameController = new TextEditingController();
+  BooleanRefWrapper showDialogErrorText = new BooleanRefWrapper(false);
+  List<String> simulations;
+  _SelectSimulationState(this.controller){
+    this.simulations = this.controller.getSimulationList();
+  }
 
   Widget build(BuildContext build){
     return ListView(
@@ -100,9 +119,15 @@ class _SelectSimulationState extends State<SelectSimulation>{
                     return GetTextDialogue.makeDialog(
                       prompt: "What do you want to name your simulation?",
                       errorText: "Invalid name entered, alpha numeric only.",
-                      validate: Simulation.validateName,
-                      parentRef: this,
-                      setState: setState
+                      validateText: Simulation.validateName,
+                      showErrorText: this.showDialogErrorText,
+                      textValueController: this.newSimulationNameController,
+                      setState: setState,
+                      submit: (String text){
+                        Navigator.of(build, rootNavigator: true).pop();
+                        this.controller.newSimultion(text);
+                        this.controller.routeToEditSimulation();
+                      }
                     );
                   }
                 );
@@ -135,12 +160,13 @@ class GetTextDialogue {
     String prompt, 
     String buttonText = "Submit", 
     Function submit, 
-    Function validate, 
+    Function validateText, 
     Function setState, 
-    _SelectSimulationState parentRef, 
-    String errorText}
+    BooleanRefWrapper showErrorText, 
+    String errorText,
+    TextEditingController textValueController}
   ){
-    if(!parentRef.showDialogErrorText){
+    if(!showErrorText.value){
       errorText = "";
     }
     return Dialog(
@@ -166,20 +192,23 @@ class GetTextDialogue {
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                 ),
+                controller: textValueController,
               ),
               Text(
-                errorText
+                errorText,
+                style: AppThemes.errorText()
               ),
               SizedBox(
                 width: 320.0,
                 child: RaisedButton(
                   onPressed: () {
-                    if (validate()){
-
+                    if (validateText(textValueController.text)){
+                      showErrorText.value = false;
+                      submit(textValueController.text);
                     }
                     else {
                       setState((){
-                        parentRef.showDialogErrorText = true;
+                        showErrorText.value = true;
                       });
                     }
                   },
@@ -188,7 +217,7 @@ class GetTextDialogue {
                     style: AppThemes.buttonText(),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -197,11 +226,19 @@ class GetTextDialogue {
   }
 }
 
+class BooleanRefWrapper{
+  bool value;
+  BooleanRefWrapper(this.value);
+}
+
 class Controller{
   Simulation simulation;
+  List<String> simulations;
+  Function routeToSelectSimulation;
+  Function routeToEditSimulation;
 
   void newSimultion(String name){
-
+    this.simulation = new Simulation.fromName(name);
   }
 
   void loadSimulation(String name){
@@ -212,8 +249,14 @@ class Controller{
 
   }
 
-  void getSimulationList(){
-
+  List<String> getSimulationList(){
+    if (this.simulations != null){
+      return this.simulations;
+    }
+    else {
+      //read in simulation names
+      return [];
+    }
   }
 }
 
@@ -228,11 +271,14 @@ class Simulation{
   int starvationPeriod = 40;
   int foodDurability = 50;
 
+  Simulation.fromName(this.name);
+
   void validateSimulation(){
 
   }
 
-  static bool validateName(){
-    return false;
+  static bool validateName(String text){
+    RegExp exp = new RegExp(r"^[a-zA-Z0-9]+$");
+    return exp.hasMatch(text);
   }
 }

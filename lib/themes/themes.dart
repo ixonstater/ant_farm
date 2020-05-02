@@ -20,4 +20,10 @@ class AppThemes{
   static TextStyle bodyText(){
     return GoogleFonts.anton();
   }
+
+  static TextStyle errorText(){
+    return TextStyle(
+      color: Colors.red
+    );
+  }
 }
