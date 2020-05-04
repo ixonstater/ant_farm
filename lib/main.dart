@@ -12,8 +12,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SimulationConfig(),
-      // home: HomePage(),
+      // home: SimulationConfig(),
+      home: HomePage(),
       routes: {
         'configSim': (context) => new SimulationConfig(),
         'tutorial': (context) => new Tutorial(),

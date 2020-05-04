@@ -1,5 +1,6 @@
 import 'package:ant_farm/themes/themes.dart';
 import 'package:flutter/material.dart';
+import 'package:ant_farm/processing/common_classes.dart';
 
 class SimulationConfig extends StatefulWidget{
   final Controller controller = new Controller();
@@ -105,130 +106,161 @@ class _SelectSimulationState extends State<SelectSimulation>{
   Widget build(BuildContext build){
     return ListView(
       children: <Widget>[
-        RaisedButton(
-          child: Text(
-            "New Simulation",
-            style: AppThemes.buttonText(),
-          ),
-          onPressed: () {
-            showDialog(
-              context: build,
-              builder: (BuildContext build){
-                return StatefulBuilder(
-                  builder: (context, setState){
-                    return GetTextDialogue.makeDialog(
-                      prompt: "What do you want to name your simulation?",
-                      errorText: "Invalid name entered, alpha numeric only.",
-                      validateText: Simulation.validateName,
-                      showErrorText: this.showDialogErrorText,
-                      textValueController: this.newSimulationNameController,
-                      setState: setState,
-                      submit: (String text){
-                        Navigator.of(build, rootNavigator: true).pop();
-                        this.controller.newSimultion(text);
-                        this.controller.routeToEditSimulation();
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
+        Container(
+          margin: EdgeInsets.only(left: 20, right: 20),
+          child: RaisedButton(
+            child: Text(
+              "New Simulation",
+              style: AppThemes.buttonText(),
+            ),
+            onPressed: () {
+              showDialog(
+                context: build,
+                builder: (BuildContext build){
+                  return StatefulBuilder(
+                    builder: (context, setState){
+                      return GetTextDialogue.makeDialog(
+                        prompt: "What do you want to name your simulation?",
+                        errorText: "Invalid name entered, alpha numeric only.",
+                        validateText: Simulation.validateName,
+                        showErrorText: this.showDialogErrorText,
+                        textValueController: this.newSimulationNameController,
+                        setState: setState,
+                        submit: (String text){
+                          Navigator.of(build, rootNavigator: true).pop();
+                          this.controller.newSimultion(text);
+                          this.controller.routeToEditSimulation();
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            }
+          )
         )
       ],
     );
   }
 }
 
-class EditSimulation extends StatefulWidget{
+class EditSimulation extends StatelessWidget{
   final Controller controller;
   EditSimulation(this.controller, {Key key}) : super(key: key);
 
-  @override
-  _EditSimulationState createState() => new _EditSimulationState();
-}
-
-class _EditSimulationState extends State<EditSimulation>{
-
   Widget build(BuildContext build){
-    return Text("edit sim");
-  }
-}
-
-class GetTextDialogue {
-  static Dialog makeDialog({
-    String prompt, 
-    String buttonText = "Submit", 
-    Function submit, 
-    Function validateText, 
-    Function setState, 
-    BooleanRefWrapper showErrorText, 
-    String errorText,
-    TextEditingController textValueController}
-  ){
-    if(!showErrorText.value){
-      errorText = "";
-    }
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.0)
-      ),
-      child: Container(
-        height: 200,
-        width: 320.0,
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  prompt,
-                  style: AppThemes.bodyText()
-                )
-              ),
-              TextField(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                controller: textValueController,
-              ),
-              Text(
-                errorText,
-                style: AppThemes.errorText()
-              ),
-              SizedBox(
-                width: 320.0,
-                child: RaisedButton(
-                  onPressed: () {
-                    if (validateText(textValueController.text)){
-                      showErrorText.value = false;
-                      submit(textValueController.text);
-                    }
-                    else {
-                      setState((){
-                        showErrorText.value = true;
-                      });
-                    }
-                  },
-                  child: Text(
-                    buttonText,
-                    style: AppThemes.buttonText(),
-                  ),
-                ),
-              ),
-            ],
+    return Container(
+      child: ListView(
+        children: <Widget>[
+          SizedBox(
+            height: 30
           ),
-        ),
+          SimulationConfigField(
+            color: Colors.blue,
+            title: "Food Spawns Per Minute",
+            errorMsg: "Invalid Spawn Rate.",
+            hintText: "10",
+          ),
+          SimulationConfigField(
+            color: Colors.yellow,
+            title: "Ant Spawns Per Minute",
+            errorMsg: "Invalid Spawn Rate.",
+            hintText: "10",
+          ),
+          SimulationConfigField(
+            color: Colors.green,
+            title: "Ant Spawn Ceiling",
+            errorMsg: "Ceiling must be between 1 and 64.",
+            hintText: "15",
+          ),
+          SimulationConfigField(
+            color: Colors.orange,
+            title: "Food To Ant Ratio",
+            errorMsg: "Invalid ratio",
+            hintText: "0.1",
+          ),
+          SimulationConfigField(
+            color: Colors.purple,
+            title: "Starvation Period",
+            errorMsg: "Invalid starvation period",
+            hintText: "40"
+          ),
+          SimulationConfigField(
+            color: Colors.red,
+            title: "Food Durability",
+            errorMsg: "Invalid food durability",
+            hintText: "40",
+          ),
+          Container(
+            margin: EdgeInsets.all(30),
+            child: SizedBox(
+              height: 50,
+              child: RaisedButton(
+                onPressed: (){},
+                child: Text(
+                  "Validate and Save",
+                  style: AppThemes.buttonText()
+                ),
+              ),
+            ),
+          )
+        ],
       )
     );
   }
 }
 
-class BooleanRefWrapper{
-  bool value;
-  BooleanRefWrapper(this.value);
+class SimulationConfigField extends StatelessWidget{
+  final TextEditingController textController = new TextEditingController();
+  final Color color;
+  final String title;
+  final String errorMsg;
+  final String hintText;
+  final bool showErrorMessage = false;
+  final bool valueSet = false;
+  SimulationConfigField({Key key, this.title, this.errorMsg, this.hintText, this.color}) : super(key: key);
+
+  Widget build(BuildContext build){
+
+    return StatefulBuilder(
+      builder: (BuildContext build, StateSetter setState){
+        return Container(
+          margin: EdgeInsets.only(bottom: 5),
+          height: 100,
+          decoration: BoxDecoration(
+            border: Border.all(width: 2.0, color: Colors.black),
+            color: this.color
+          ),
+          child: Row(
+            children: <Widget>[
+              SizedBox(
+                width: 10
+              ),
+              SizedBox(
+                width: 60,
+                child: TextField(
+                  controller: this.textController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: this.hintText
+                  ),
+                )
+              ),
+              SizedBox(
+                width: 10
+              ),
+              Expanded(
+                child: Text(
+                  this.title,
+                  style: AppThemes.bodyText()
+                )
+              )
+            ],
+          )
+        );
+      }
+    );
+  }
 }
 
 class Controller{
@@ -264,12 +296,12 @@ class Simulation{
   bool isValid = true;
   String name;
 
-  int foodSpawnRate = 10;
-  int antSpawnRate = 10;
-  int antSpawnCeiling = 8;
-  double foodToAntRatio = 0.01;
-  int starvationPeriod = 40;
-  int foodDurability = 50;
+  int foodSpawnRate;
+  int antSpawnRate;
+  int antSpawnCeiling;
+  double foodToAntRatio;
+  int starvationPeriod;
+  int foodDurability;
 
   Simulation.fromName(this.name);
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ant_farm/themes/themes.dart';
 
 class MapRenderer{
   static List drawDirections = [
@@ -44,4 +45,80 @@ class MapRenderer{
 
     return walls;
   }
+}
+
+class GetTextDialogue {
+  static Dialog makeDialog({
+    String prompt, 
+    String buttonText = "Submit", 
+    Function submit, 
+    Function validateText, 
+    Function setState, 
+    BooleanRefWrapper showErrorText, 
+    String errorText,
+    TextEditingController textValueController}
+  ){
+    if(!showErrorText.value){
+      errorText = "";
+    }
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0)
+      ),
+      child: Container(
+        height: 200,
+        width: 320.0,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  prompt,
+                  style: AppThemes.bodyText()
+                )
+              ),
+              TextField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                controller: textValueController,
+              ),
+              Text(
+                errorText,
+                style: AppThemes.errorText()
+              ),
+              SizedBox(
+                width: 320.0,
+                child: RaisedButton(
+                  onPressed: () {
+                    if (validateText(textValueController.text)){
+                      showErrorText.value = false;
+                      submit(textValueController.text);
+                    }
+                    else {
+                      setState((){
+                        showErrorText.value = true;
+                      });
+                    }
+                  },
+                  child: Text(
+                    buttonText,
+                    style: AppThemes.buttonText(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      )
+    );
+  }
+}
+
+class BooleanRefWrapper{
+  bool value;
+  BooleanRefWrapper(this.value);
 }

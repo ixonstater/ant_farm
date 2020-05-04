@@ -33,7 +33,7 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             ListTile(
               title: Text(
-                "Edit Simulation",
+                "Simulation Builder",
                 style: AppThemes.listTileText()  
               ),
               onTap: () {
